@@ -3,7 +3,8 @@ module Main exposing (..)
 import Browser exposing (..)
 import Browser.Navigation as Nav
 import Html exposing (..)
-import Http
+import Html.Attributes exposing (href)
+import Http exposing (Error(..))
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Url exposing (Url)
@@ -13,33 +14,51 @@ import Url exposing (Url)
 -- Model
 
 
-type alias PageData =
-    { title : String
-    , headline : String
-    , description : String
+type Layout
+    = Test
+    | About
+
+
+type alias Component =
+    { name : String
+    , data : String
     }
 
 
 type alias Page =
-    { layout : String
-    , data : PageData
+    { layout : Layout
+    , title : String
+    , components : List Component
     }
 
 
 type Resource data
     = Loading
     | Result data
-    | Error
+    | Error Http.Error
 
 
 type alias Model =
-    { page : Resource Page }
+    { key : Nav.Key
+    , page : Resource Page
+    }
+
+
+convertUrl : Url -> String
+convertUrl url =
+    if url.path == "/" then
+        "/index.json"
+
+    else
+        url.path ++ ".json"
 
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { page = Loading }
-    , Http.get { url = "/index.json", expect = Http.expectJson GotPage pageDecoder }
+    ( { key = key
+      , page = Loading
+      }
+    , Http.get { url = convertUrl url, expect = Http.expectJson GotPage pageDecoder }
     )
 
 
@@ -49,26 +68,40 @@ init flags url key =
 
 type Msg
     = GotPage (Result Http.Error Page)
-    | NoOp
+    | GetPage Url
+    | LinkClicked Browser.UrlRequest
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GetPage url ->
+            ( { model | page = Loading }
+            , Http.get
+                { url = convertUrl url
+                , expect = Http.expectJson GotPage pageDecoder
+                }
+            )
+
         GotPage result ->
             let
                 newPage =
                     case result of
-                        Ok value ->
-                            Result value
+                        Ok page ->
+                            Result page
 
                         Err error ->
-                            Error
+                            Error error
             in
             ( { model | page = newPage }, Cmd.none )
 
-        NoOp ->
-            ( model, Cmd.none )
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
 
 
 
@@ -83,19 +116,64 @@ view model =
             , body = [ text "Loading..." ]
             }
 
-        Error ->
+        Error error ->
+            let
+                parseError e =
+                    case e of
+                        BadUrl message ->
+                            "BadUrl: " ++ message
+
+                        Timeout ->
+                            "Timeout"
+
+                        NetworkError ->
+                            "Network error"
+
+                        BadStatus statusCode ->
+                            "Bad status " ++ String.fromInt statusCode
+
+                        BadBody message ->
+                            "Bad response body: " ++ message
+            in
             { title = "Error!"
-            , body = [ text "Error loading the data" ]
+            , body = [ text (parseError error) ]
             }
 
         Result page ->
-            { title = page.data.title
+            { title = page.title
             , body =
-                [ h1 [] [ text page.data.headline ]
-                , p [] [ text page.data.description ]
-                , div [] [ text page.layout ]
+                [ navView
+                , div [] (pageView page)
                 ]
             }
+
+
+navView : Html Msg
+navView =
+    div []
+        [ a [ href "/" ] [ text "Home" ]
+        , text " | "
+        , a [ href "/about" ] [ text "About" ]
+        ]
+
+
+pageView : Page -> List (Html Msg)
+pageView page =
+    case page.layout of
+        Test ->
+            [ h1 [] [ text "This is a test page!" ]
+            , div [] (List.map componentView page.components)
+            ]
+
+        About ->
+            [ h1 [] [ text "This is an about page" ]
+            , div [] (List.map componentView page.components)
+            ]
+
+
+componentView : Component -> Html Msg
+componentView component =
+    div [] [ text component.data ]
 
 
 
@@ -113,12 +191,12 @@ subscriptions _ =
 
 onUrlRequest : UrlRequest -> Msg
 onUrlRequest request =
-    NoOp
+    LinkClicked request
 
 
 onUrlChange : Url -> Msg
 onUrlChange url =
-    NoOp
+    GetPage url
 
 
 
@@ -128,16 +206,38 @@ onUrlChange url =
 pageDecoder : JD.Decoder Page
 pageDecoder =
     JD.succeed Page
-        |> JDP.required "Layout" JD.string
-        |> JDP.required "Data" pageDataDecoder
-
-
-pageDataDecoder : JD.Decoder PageData
-pageDataDecoder =
-    JD.succeed PageData
+        |> JDP.required "Layout" layoutDecoder
         |> JDP.required "Title" JD.string
-        |> JDP.required "Headline" JD.string
-        |> JDP.required "Description" JD.string
+        |> JDP.required "Components" componentsDecoder
+
+
+componentsDecoder : JD.Decoder (List Component)
+componentsDecoder =
+    JD.list componentDecoder
+
+
+componentDecoder : JD.Decoder Component
+componentDecoder =
+    JD.succeed Component
+        |> JDP.required "Type" JD.string
+        |> JDP.required "Data" JD.string
+
+
+layoutDecoder : JD.Decoder Layout
+layoutDecoder =
+    JD.string
+        |> JD.andThen
+            (\str ->
+                case str of
+                    "Test" ->
+                        JD.succeed Test
+
+                    "About" ->
+                        JD.succeed About
+
+                    somethingElse ->
+                        JD.fail <| "Unknown layout: " ++ somethingElse
+            )
 
 
 
