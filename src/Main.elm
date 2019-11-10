@@ -224,13 +224,28 @@ componentDecoder =
         toDecoder type_ data =
             case type_ of
                 "Headline" ->
-                    JD.succeed (Component (Headline.view data))
+                    case Headline.view data of
+                        Ok value ->
+                            JD.succeed (Component value)
+
+                        Err error ->
+                            JD.fail (JD.errorToString error)
 
                 "Teaser" ->
-                    JD.succeed (Component (Teaser.view data))
+                    case Teaser.view data of
+                        Ok value ->
+                            JD.succeed (Component value)
+
+                        Err error ->
+                            JD.fail (JD.errorToString error)
 
                 "SmallHeadline" ->
-                    JD.succeed (Component (SmallHeadline.view data))
+                    case SmallHeadline.view data of
+                        Ok value ->
+                            JD.succeed (Component value)
+
+                        Err error ->
+                            JD.fail (JD.errorToString error)
 
                 somethingElse ->
                     JD.fail <| "Unknown component type: \"" ++ somethingElse ++ "\""

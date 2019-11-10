@@ -8,7 +8,11 @@
     },
     {
       "Type": "Teaser",
-      "Data": "Spare ribs ball tip brisket hamburger corned beef, short ribs tri-tip salami pastrami shoulder jowl porchetta. Venison sirloin ribeye, picanha frankfurter rump corned beef. Shoulder biltong beef ribs pork chop picanha. Porchetta pastrami pork chop strip steak, pork loin tenderloin leberkas drumstick turkey fatback meatloaf. Flank sirloin short loin burgdoggen tri-tip. Beef fatback alcatra pastrami. Sausage cow jowl turkey short loin strip steak shoulder pork chop, pig kielbasa pastrami jerky picanha ball tip."
+      "Data": {
+        "Headline": "Bacon!",
+        "Image": "https://baconmockup.com/400/200/",
+        "Text": "Spare ribs ball tip brisket hamburger corned beef, short ribs tri-tip salami pastrami shoulder jowl porchetta. Venison sirloin ribeye, picanha frankfurter rump corned beef. Shoulder biltong beef ribs pork chop picanha. Porchetta pastrami pork chop strip steak, pork loin tenderloin leberkas drumstick turkey fatback meatloaf. Flank sirloin short loin burgdoggen tri-tip. Beef fatback alcatra pastrami. Sausage cow jowl turkey short loin strip steak shoulder pork chop, pig kielbasa pastrami jerky picanha ball tip."
+      }
     }
   ]
 }
