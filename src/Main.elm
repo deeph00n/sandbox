@@ -209,43 +209,32 @@ pageDecoder =
     JD.succeed Page
         |> JDP.required "Layout" layoutDecoder
         |> JDP.required "Title" JD.string
-        |> JDP.required "Components" componentsDecoder
-
-
-componentsDecoder : JD.Decoder (List Component)
-componentsDecoder =
-    JD.list componentDecoder
+        |> JDP.required "Components" (JD.list componentDecoder)
 
 
 componentDecoder : JD.Decoder Component
 componentDecoder =
     let
+        parseResult : Result JD.Error (Html Msg) -> JD.Decoder Component
+        parseResult result =
+            case result of
+                Ok value ->
+                    JD.succeed (Component value)
+
+                Err error ->
+                    JD.fail (JD.errorToString error)
+
         toDecoder : String -> JD.Value -> JD.Decoder Component
         toDecoder type_ data =
             case type_ of
                 "Headline" ->
-                    case Headline.view data of
-                        Ok value ->
-                            JD.succeed (Component value)
-
-                        Err error ->
-                            JD.fail (JD.errorToString error)
+                    Headline.view data |> parseResult
 
                 "Teaser" ->
-                    case Teaser.view data of
-                        Ok value ->
-                            JD.succeed (Component value)
-
-                        Err error ->
-                            JD.fail (JD.errorToString error)
+                    Teaser.view data |> parseResult
 
                 "SmallHeadline" ->
-                    case SmallHeadline.view data of
-                        Ok value ->
-                            JD.succeed (Component value)
-
-                        Err error ->
-                            JD.fail (JD.errorToString error)
+                    SmallHeadline.view data |> parseResult
 
                 somethingElse ->
                     JD.fail <| "Unknown component type: \"" ++ somethingElse ++ "\""
