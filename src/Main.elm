@@ -2,11 +2,14 @@ module Main exposing (..)
 
 import Browser exposing (..)
 import Browser.Navigation as Nav
+import Headline
 import Html exposing (..)
 import Html.Attributes exposing (href)
 import Http exposing (Error(..))
-import Json.Decode as JD
+import Json.Decode as JD exposing (..)
 import Json.Decode.Pipeline as JDP
+import SmallHeadline
+import Teaser
 import Url exposing (Url)
 
 
@@ -20,9 +23,7 @@ type Layout
 
 
 type alias Component =
-    { name : String
-    , data : String
-    }
+    { view : Html Msg }
 
 
 type alias Page =
@@ -173,7 +174,7 @@ pageView page =
 
 componentView : Component -> Html Msg
 componentView component =
-    div [] [ text component.data ]
+    div [] [ component.view ]
 
 
 
@@ -218,9 +219,26 @@ componentsDecoder =
 
 componentDecoder : JD.Decoder Component
 componentDecoder =
-    JD.succeed Component
+    let
+        toDecoder : String -> JD.Value -> JD.Decoder Component
+        toDecoder type_ data =
+            case type_ of
+                "Headline" ->
+                    JD.succeed (Component (Headline.view data))
+
+                "Teaser" ->
+                    JD.succeed (Component (Teaser.view data))
+
+                "SmallHeadline" ->
+                    JD.succeed (Component (SmallHeadline.view data))
+
+                somethingElse ->
+                    JD.fail <| "Unknown component type: \"" ++ somethingElse ++ "\""
+    in
+    JD.succeed toDecoder
         |> JDP.required "Type" JD.string
-        |> JDP.required "Data" JD.string
+        |> JDP.required "Data" JD.value
+        |> JDP.resolve
 
 
 layoutDecoder : JD.Decoder Layout
