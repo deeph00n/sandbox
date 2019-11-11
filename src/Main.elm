@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Browser exposing (..)
 import Browser.Navigation as Nav
+import Counter
 import Headline
 import Html exposing (..)
 import Html.Attributes exposing (href)
@@ -235,6 +236,9 @@ componentDecoder =
 
                 "SmallHeadline" ->
                     SmallHeadline.view data |> parseResult
+
+                "Counter" ->
+                    Counter.view data |> parseResult
 
                 somethingElse ->
                     JD.fail <| "Unknown component type: \"" ++ somethingElse ++ "\""

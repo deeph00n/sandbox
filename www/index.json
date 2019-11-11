@@ -3,6 +3,10 @@
   "Title": "Hello, world",
   "Components": [
     {
+      "Type": "Counter",
+      "Data": 4
+    },
+    {
       "Type": "Headline",
       "Data": "Hello, world!"
     },
