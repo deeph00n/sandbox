@@ -1,11 +1,11 @@
-module Counter exposing (Data, update, view)
+module Counter exposing (Model, update, view)
 
 import Html exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as JD
 import Json.Encode as JE
 
-type alias Data =
+type alias Model =
     Int
 
 type Msg
@@ -31,20 +31,20 @@ encode msg =
 
 
 
-update : JD.Value -> Data -> Data
-update m data  =
+update : JD.Value -> Model -> Model
+update m model  =
     case decode(m) of
         Increment ->
-            data + 1
+            model + 1
 
         MsgError ->
-            data
+            model
 
 
-view : Data -> (JD.Value -> msg) -> Html msg
-view data toMsg =
+view : Model -> (JD.Value -> msg) -> Html msg
+view model toMsg =
     h2 []
-        [ text (String.fromInt data)
+        [ text (String.fromInt model)
         , text "  "
         , button [ onClick (toMsg (encode Increment)) ] [ text "Add" ]
         ]

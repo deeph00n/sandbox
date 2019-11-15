@@ -1,27 +1,27 @@
 module Main exposing (..)
 
 import Browser exposing (..)
+import Counter exposing (Model, update, view)
+import Dict exposing (Dict)
 import Headline
 import Html exposing (..)
 import Json.Decode as JD
 import Teaser
-import Counter exposing (update, Data, view)
 
-type alias Id = Int
+
+type alias Id =
+    Int
+
 
 type Component
-    = Teaser Teaser.Data
-    | Headline Headline.Data
-    | Counter Counter.Data
-
-type alias Node =
-    { id : Id
-    , component : Component
-    }
+    = Teaser Teaser.Model
+    | Headline Headline.Model
+    | Counter Counter.Model
 
 
 type alias Model =
-    List Node
+    Dict Id Component
+
 
 type Msg
     = CmpMsg Id JD.Value
@@ -29,61 +29,70 @@ type Msg
 
 init : Model
 init =
-    [ { id = 1, component = Headline "I'm a headline" }
-    , { id = 2
-      , component =
-            Teaser
+    Dict.fromList
+        [ ( 1, Headline "I'm a headline" )
+        , ( 2
+          , Teaser
                 { headline = "Hello, world"
                 , image = "https://baconmockup.com/450/300"
                 , description = "Lorem ipsum"
                 }
-      }
-    , { id = 3, component = Headline "I'm also a headline" }
-    , { id = 4, component = Counter 1 }
-    , { id = 5, component = Counter 10 }
-    , { id = 6, component = Counter 11 }
-    ]
+          )
+        , ( 3, Headline "I'm also a headline" )
+        , ( 4, Counter 1 )
+        , ( 5, Counter 10 )
+        , ( 6, Counter 11 )
+        ]
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        CmpMsg id m ->
+        CmpMsg id msgToCmp ->
             let
-                inc : Node -> Node
-                inc node =
-                    if (node.id == id) then
-                        case node.component of
-                            Counter data ->
-                                {id = id, component = Counter <| Counter.update m data }
-                            _ -> node
-                    else
-                        node
+                updateComponent : Maybe Component -> Maybe Component
+                updateComponent maybeCmp =
+                    case maybeCmp of
+                        Just theCmp ->
+                            Just <| case theCmp of
+                                Teaser m ->
+                                    Teaser m
+
+                                Headline m ->
+                                    Headline m
+
+                                Counter m ->
+                                     Counter (Counter.update msgToCmp m)
+
+                        Nothing ->
+                            Nothing
 
             in
-            List.map inc model
+            Dict.update id updateComponent model
 
 
 view : Model -> Html Msg
 view model =
     div [] <|
-        List.map nodeView model
+        List.map nodeView (Dict.toList model)
 
-nodeView : Node -> Html Msg
-nodeView node =
-    componentView node.id node.component
+
+nodeView : (Id, Component) -> Html Msg
+nodeView (id, component) =
+    componentView id component
+
 
 componentView : Id -> Component -> Html Msg
 componentView id component =
     case component of
-        Teaser data ->
-            Teaser.view data
+        Teaser model ->
+            Teaser.view model
 
-        Headline data ->
-            Headline.view data
+        Headline model ->
+            Headline.view model
 
-        Counter data ->
-            Counter.view data (CmpMsg id)
+        Counter model ->
+            Counter.view model (CmpMsg id)
 
 
 main =

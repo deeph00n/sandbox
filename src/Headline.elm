@@ -2,10 +2,10 @@ module Headline exposing (..)
 
 import Html exposing (..)
 
-type alias Data =
+type alias Model =
     String
 
 
-view : Data -> Html msg
-view data =
-    h1 [] [ text data ]
+view : Model -> Html msg
+view model =
+    h1 [] [ text model ]
