@@ -1,71 +1,16 @@
-module Main exposing (..)
+module Main exposing (main)
 
-import Html exposing (..)
-import System.Platform exposing (Program)
-import System.Message exposing (SystemMessage)
+import ActorName exposing (ActorName)
+import Address exposing (Address(..))
+import Bootstrap exposing (AppModel, bootstrap)
+import Html exposing (Html, a, div, h1, node, p, text)
+import Json.Encode as Encode
+import Msg exposing (AppMsg(..), Msg)
 import System.Browser exposing (element)
+import System.Log exposing (LogMessage, toString)
+import System.Message exposing (..)
+import System.Platform exposing (Program)
 
-type ActorName
-    = None
-
-
-
-{--
-type ActorName
-    = Counter
-    | Counters
-    | Snackbar
---}
-
-
-type Address
-    = None
-
-
-
-{--
-type Address
-    = AllCounters
-    | Snackbar
---}
-
-
-type AppModel
-    = None
-
-
-
-{--
-type AppModel
-    = CountersModel Counters.Model
-    | CounterModel Counter.Model
-    | SnackbarModel Snackbar.Model
---}
-
-type alias Msg =
-    SystemMessage Address ActorName AppMsg
-
-type AppMsg
-    = Nop
-
-{--
-type AppMsg
-    = Counters Counters.MsgIn
-    | Counter Counter.MsgIn
-    | Snackbar Snackbar.MsgIn
-    | LogMsg (LogMessage Address ActorName AppMsg)
---}
-
-init : () -> List Msg
-init _ =
-    []
-
-view : List (Html Msg) -> Html Msg
-view contents =
-    div []
-        [ h1 [] [ text "Hello, actors!" ]
-        , div [] contents
-        ]
 
 main : Program () Address ActorName AppModel AppMsg
 main =
@@ -76,3 +21,25 @@ main =
         , view = view
         , onLogMessage = onLogMessage
         }
+
+
+init : () -> List Msg
+init _ =
+    [ spawnWithFlags (Encode.int 0) ActorName.Counter populateView
+    , spawnWithFlags (Encode.int 10) ActorName.Counter populateView
+    ]
+
+
+view : List (Html Msg) -> Html Msg
+view contents =
+    div []
+        [ h1 [] [ text "Hello, actors!" ]
+        , div [ ] contents
+        ]
+
+
+onLogMessage :
+    LogMessage Address ActorName AppMsg
+    -> SystemMessage Address ActorName AppMsg
+onLogMessage _ =
+    noOperation
