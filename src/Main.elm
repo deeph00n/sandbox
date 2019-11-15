@@ -1,16 +1,13 @@
 module Main exposing (..)
 
 import Browser exposing (..)
+import Core exposing (Id)
 import Counter exposing (Model, update, view)
 import Dict exposing (Dict)
+import GlobalMsg exposing (GlobalMsg(..))
 import Headline
 import Html exposing (..)
-import Json.Decode as JD
 import Teaser
-
-
-type alias Id =
-    Int
 
 
 type Component
@@ -23,10 +20,6 @@ type alias Model =
     Dict Id Component
 
 
-type Msg
-    = CmpMsg Id JD.Value
-
-
 init : Model
 init =
     Dict.fromList
@@ -34,7 +27,7 @@ init =
         , ( 2
           , Teaser
                 { headline = "Hello, world"
-                , image = "https://baconmockup.com/450/300"
+                , image = "https://baconmockup.com/250/150"
                 , description = "Lorem ipsum"
                 }
           )
@@ -45,44 +38,41 @@ init =
         ]
 
 
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        CmpMsg id msgToCmp ->
+update : GlobalMsg -> Model -> Model
+update globalMsg model =
+    case globalMsg of
+        ComponentMsg id msgToCmp ->
             let
                 updateComponent : Maybe Component -> Maybe Component
                 updateComponent maybeCmp =
                     case maybeCmp of
                         Just theCmp ->
-                            Just <| case theCmp of
-                                Teaser m ->
-                                    Teaser m
+                            Just <|
+                                case theCmp of
+                                    Counter m ->
+                                        Counter (Counter.update msgToCmp m)
 
-                                Headline m ->
-                                    Headline m
-
-                                Counter m ->
-                                     Counter (Counter.update msgToCmp m)
+                                    _ ->
+                                        theCmp
 
                         Nothing ->
                             Nothing
-
             in
             Dict.update id updateComponent model
 
 
-view : Model -> Html Msg
+view : Model -> Html GlobalMsg
 view model =
     div [] <|
         List.map nodeView (Dict.toList model)
 
 
-nodeView : (Id, Component) -> Html Msg
-nodeView (id, component) =
+nodeView : ( Id, Component ) -> Html GlobalMsg
+nodeView ( id, component ) =
     componentView id component
 
 
-componentView : Id -> Component -> Html Msg
+componentView : Id -> Component -> Html GlobalMsg
 componentView id component =
     case component of
         Teaser model ->
@@ -92,7 +82,7 @@ componentView id component =
             Headline.view model
 
         Counter model ->
-            Counter.view model (CmpMsg id)
+            Counter.view model (ComponentMsg id)
 
 
 main =
