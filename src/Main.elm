@@ -4,7 +4,7 @@ import Browser exposing (..)
 import Core exposing (Id)
 import Counter exposing (Model, update, view)
 import Dict exposing (Dict)
-import GlobalMsg exposing (GlobalMsg(..))
+import GlobalMsg exposing (GlobalMsg(..), toCounterMsg, toGlobalHtmlMsg)
 import Headline
 import Html exposing (..)
 import Teaser
@@ -41,7 +41,7 @@ init =
 update : GlobalMsg -> Model -> Model
 update globalMsg model =
     case globalMsg of
-        ComponentMsg id msgToCmp ->
+        SystemMsg id msgToCmp ->
             let
                 updateComponent : Maybe Component -> Maybe Component
                 updateComponent maybeCmp =
@@ -49,9 +49,12 @@ update globalMsg model =
                         Just theCmp ->
                             Just <|
                                 case theCmp of
-                                    Counter m ->
-                                        Counter (Counter.update msgToCmp m)
-
+                                    Counter counterModel ->
+                                            case (toCounterMsg msgToCmp) of
+                                                Just counterMsg ->
+                                                    Counter (Counter.update counterMsg counterModel)
+                                                Nothing ->
+                                                    theCmp
                                     _ ->
                                         theCmp
 
@@ -64,16 +67,14 @@ update globalMsg model =
 view : Model -> Html GlobalMsg
 view model =
     div [] <|
-        List.map nodeView (Dict.toList model)
+        List.map componentView (Dict.toList model)
 
 
-nodeView : ( Id, Component ) -> Html GlobalMsg
-nodeView ( id, component ) =
-    componentView id component
 
 
-componentView : Id -> Component -> Html GlobalMsg
-componentView id component =
+
+componentView : ( Id, Component ) -> Html GlobalMsg
+componentView (id, component) =
     case component of
         Teaser model ->
             Teaser.view model
@@ -82,7 +83,7 @@ componentView id component =
             Headline.view model
 
         Counter model ->
-            Counter.view model (ComponentMsg id)
+            Counter.view model (SystemMsg id)
 
 
 main =

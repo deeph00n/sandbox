@@ -1,5 +1,6 @@
-module Counter exposing (Model, update, view)
+module Counter exposing (Model, update, view, CounterMsg(..))
 
+import GlobalMsg exposing (ComponentMsg, GlobalMsg)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as JD
@@ -8,32 +9,14 @@ import Json.Encode as JE
 type alias Model =
     Int
 
-type Msg
+type CounterMsg
     = Increment
     | MsgError
 
-decode : JD.Value -> Msg
-decode a =
-    case (JD.decodeValue msgDecode a) of
-        Ok msg -> msg
-        Err _ -> MsgError
 
-
-msgDecode =
-    JD.succeed Increment
-
-encode : Msg -> JD.Value
-encode msg =
+update : CounterMsg -> Model -> Model
+update msg model  =
     case msg of
-        Increment -> JE.string "Increment"
-
-        MsgError -> JE.string "MsgError"
-
-
-
-update : JD.Value -> Model -> Model
-update m model  =
-    case decode(m) of
         Increment ->
             model + 1
 
@@ -41,10 +24,10 @@ update m model  =
             model
 
 
-view : Model -> (JD.Value -> msg) -> Html msg
+view : Model -> (ComponentMsg -> GlobalMsg) -> Html GlobalMsg
 view model toMsg =
     h2 []
         [ text (String.fromInt model)
         , text "  "
-        , button [ onClick (toMsg (encode Increment)) ] [ text "Add" ]
+        , button [ onClick (toMsg Increment) ] [ text "Add" ]
         ]
